@@ -23,6 +23,18 @@ def algoritmo_complexo(quantidade):
     return quantidade * 0.02
 
 def corretor(id_corretor, cotacoes, locks, algoritmo):
+    """
+    Executes transactions for a stock broker.
+
+    Args:
+        id_corretor (int): The ID of the stock broker.
+        cotacoes (list): A list of stock prices for different companies.
+        locks (list): A list of locks for each company's stock.
+        algoritmo (function): The algorithm used to calculate the variation in stock prices.
+
+    Returns:
+        None
+    """
     for _ in range(NUM_TRANSACOES):
         empresa = random.randint(0, NUM_EMPRESAS - 1)
         quantidade = random.randint(1, 10)
