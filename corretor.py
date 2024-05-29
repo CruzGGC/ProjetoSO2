@@ -30,14 +30,14 @@ def algoritmo_complexo(quantidade):
     return quantidade * 0.02
 
 # Função do corretor
-def corretor(id_corretor, cotacoes, locks, algoritmo, saldos, pasta_registros, num_transacoes):
+def corretor(id_corretor, cotacoes, semaphores, algoritmo, saldos, pasta_registros, num_transacoes):
     """
     Simula as operações de um corretor, registrando as transações em um arquivo.
 
     Args:
         id_corretor (int): ID do corretor.
         cotacoes (multiprocessing.Array): Array compartilhado com as cotações das ações.
-        locks (list): Lista de locks para sincronização.
+        semaphores (list): Lista de semaphores para sincronização.
         algoritmo (function): Função do algoritmo de negociação.
         saldos (multiprocessing.Array): Array compartilhado com os saldos dos corretores.
         pasta_registros (str): Caminho da pasta onde os registros serão salvos.
@@ -50,7 +50,7 @@ def corretor(id_corretor, cotacoes, locks, algoritmo, saldos, pasta_registros, n
             tipo_operacao = random.choice(['compra', 'venda'])
             preco = cotacoes[empresa] * random.uniform(0.9, 1.1)
             
-            locks[empresa].acquire()
+            semaphores[empresa].acquire()
             try:
                 variacao = algoritmo(quantidade)
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -68,6 +68,6 @@ def corretor(id_corretor, cotacoes, locks, algoritmo, saldos, pasta_registros, n
                 registro_arquivo.write(registro)
                 registro_arquivo.flush()
             finally:
-                locks[empresa].release()
+                semaphores[empresa].release()
             
             time.sleep(random.uniform(0.01, 0.1))

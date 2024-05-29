@@ -13,20 +13,20 @@ def criar_pasta_registros(pasta):
     if not os.path.exists(pasta):
         os.makedirs(pasta)
 
-def atualizar_cotacoes(cotacoes, locks, pasta_registros, variacao_maxima):
+def atualizar_cotacoes(cotacoes, semaphores, pasta_registros, variacao_maxima):
     """
     Atualiza as cotações das ações e registra variações extremas em um arquivo de alertas.
 
     Args:
         cotacoes (multiprocessing.Array): Array compartilhado com as cotações das ações.
-        locks (list): Lista de locks para sincronização.
+        semaphores (list): Lista de semaphores para sincronização.
         pasta_registros (str): Caminho da pasta onde os registros serão salvos.
         variacao_maxima (float): Variação máxima permitida antes de disparar um alerta.
     """
     with open(os.path.join(pasta_registros, "Alertas.txt"), "w", encoding='utf-8') as alertas_arquivo:
         while True:
             for i in range(len(cotacoes)):
-                locks[i].acquire()
+                semaphores[i].acquire()
                 try:
                     variacao = random.uniform(-variacao_maxima, variacao_maxima)
                     cotacoes[i] *= (1 + variacao)
@@ -38,7 +38,7 @@ def atualizar_cotacoes(cotacoes, locks, pasta_registros, variacao_maxima):
                         alertas_arquivo.flush()
                         time.sleep(5)  # Suspende negociação por 5 segundos
                 finally:
-                    locks[i].release()
+                    semaphores[i].release()
             time.sleep(1)
 
 def apresentar_resultados(cotacoes, saldos):
@@ -54,13 +54,13 @@ def apresentar_resultados(cotacoes, saldos):
         print(resultado)
         time.sleep(5)
 
-def sistema_alertas(cotacoes, locks, saldos, pasta_registros):
+def sistema_alertas(cotacoes, semaphores, saldos, pasta_registros):
     """
     Sistema de alertas que monitora cotações extremas e registra alertas em um arquivo.
 
     Args:
         cotacoes (multiprocessing.Array): Array compartilhado com as cotações das ações.
-        locks (list): Lista de locks para sincronização.
+        semaphores (list): Lista de semaphores para sincronização.
         saldos (multiprocessing.Array): Array compartilhado com os saldos dos corretores.
         pasta_registros (str): Caminho da pasta onde os registros serão salvos.
     """
@@ -68,7 +68,7 @@ def sistema_alertas(cotacoes, locks, saldos, pasta_registros):
         while True:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             for i in range(len(cotacoes)):
-                locks[i].acquire()
+                semaphores[i].acquire()
                 try:
                     if cotacoes[i] < 10:
                         alerta = f"{timestamp} - ALERTA: A cotação da empresa {i} está extremamente baixa: {cotacoes[i]:.2f}\n"
@@ -81,7 +81,7 @@ def sistema_alertas(cotacoes, locks, saldos, pasta_registros):
                         alertas_arquivo.write(alerta)
                         alertas_arquivo.flush()
                 finally:
-                    locks[i].release()
+                    semaphores[i].release()
             
             saldos_atualizados = [round(s, 2) for s in saldos]
             alerta_saldos = f"{timestamp} - Saldos dos corretores: {saldos_atualizados}\n"
