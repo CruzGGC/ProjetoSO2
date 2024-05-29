@@ -26,7 +26,8 @@ def atualizar_cotacoes(cotacoes, locks, pasta_registros, variacao_maxima):
     with open(os.path.join(pasta_registros, "Alertas.txt"), "w", encoding='utf-8') as alertas_arquivo:
         while True:
             for i in range(len(cotacoes)):
-                with locks[i]:
+                locks[i].acquire()
+                try:
                     variacao = random.uniform(-variacao_maxima, variacao_maxima)
                     cotacoes[i] *= (1 + variacao)
                     if abs(variacao) > variacao_maxima:
@@ -36,6 +37,8 @@ def atualizar_cotacoes(cotacoes, locks, pasta_registros, variacao_maxima):
                         alertas_arquivo.write(alerta)
                         alertas_arquivo.flush()
                         time.sleep(5)  # Suspende negociação por 5 segundos
+                finally:
+                    locks[i].release()
             time.sleep(1)
 
 def apresentar_resultados(cotacoes, saldos):
@@ -65,7 +68,8 @@ def sistema_alertas(cotacoes, locks, saldos, pasta_registros):
         while True:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             for i in range(len(cotacoes)):
-                with locks[i]:
+                locks[i].acquire()
+                try:
                     if cotacoes[i] < 10:
                         alerta = f"{timestamp} - ALERTA: A cotação da empresa {i} está extremamente baixa: {cotacoes[i]:.2f}\n"
                         print(alerta)
@@ -76,6 +80,8 @@ def sistema_alertas(cotacoes, locks, saldos, pasta_registros):
                         print(alerta)
                         alertas_arquivo.write(alerta)
                         alertas_arquivo.flush()
+                finally:
+                    locks[i].release()
             
             saldos_atualizados = [round(s, 2) for s in saldos]
             alerta_saldos = f"{timestamp} - Saldos dos corretores: {saldos_atualizados}\n"

@@ -50,7 +50,8 @@ def corretor(id_corretor, cotacoes, locks, algoritmo, saldos, pasta_registros, n
             tipo_operacao = random.choice(['compra', 'venda'])
             preco = cotacoes[empresa] * random.uniform(0.9, 1.1)
             
-            with locks[empresa]:
+            locks[empresa].acquire()
+            try:
                 variacao = algoritmo(quantidade)
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 if tipo_operacao == 'compra':
@@ -66,5 +67,7 @@ def corretor(id_corretor, cotacoes, locks, algoritmo, saldos, pasta_registros, n
                 
                 registro_arquivo.write(registro)
                 registro_arquivo.flush()
+            finally:
+                locks[empresa].release()
             
             time.sleep(random.uniform(0.01, 0.1))

@@ -1,6 +1,6 @@
 import multiprocessing
-import random
 import threading
+import random
 from corretor import corretor, algoritmo_simples, algoritmo_complexo
 from gestor import criar_pasta_registros, atualizar_cotacoes, apresentar_resultados, sistema_alertas
 
@@ -12,18 +12,7 @@ NUM_TRANSACOES = 100
 SALDO_INICIAL = 100000
 PASTA_REGISTROS = 'Registros'
 
-def main():
-    """
-    Função principal que inicializa a simulação do mercado de acções.
-
-    Esta função cria uma pasta para armazenar registos de transacções,
-    inicializa preços de ações e bloqueios para sincronização, e inicia
-    processos para corretores, bem como threads para o gerenciador do mercado de ações
-    e sistema de alerta.
-
-    Retorna:
-        Nada
-    """
+if __name__ == '__main__':
     criar_pasta_registros(PASTA_REGISTROS)
     
     # Inicialização das cotações das ações e locks para sincronização
@@ -34,13 +23,14 @@ def main():
     processos = []
     algoritmos = [algoritmo_simples, algoritmo_complexo]
     
+    # Criação e início dos processos dos corretores
     for i in range(NUM_CORRETORES):
         algoritmo = random.choice(algoritmos)
         p = multiprocessing.Process(target=corretor, args=(i, cotacoes, locks, algoritmo, saldos, PASTA_REGISTROS, NUM_TRANSACOES))
         processos.append(p)
         p.start()
     
-    # Iniciando threads para o gestor da bolsa de valores e alertas
+    # Iniciando threads para o gestor da bolsa de valores e sistema de alertas
     cotacoes_thread = threading.Thread(target=atualizar_cotacoes, args=(cotacoes, locks, PASTA_REGISTROS, VARIACAO_MAXIMA))
     cotacoes_thread.start()
 
@@ -50,12 +40,11 @@ def main():
     alertas_thread = threading.Thread(target=sistema_alertas, args=(cotacoes, locks, saldos, PASTA_REGISTROS))
     alertas_thread.start()
 
+    # Aguarda a conclusão dos processos dos corretores
     for p in processos:
         p.join()
-    
+
+    # Aguarda a conclusão das threads
     cotacoes_thread.join()
     apresentacao_thread.join()
     alertas_thread.join()
-
-if __name__ == '__main__':
-    main()
